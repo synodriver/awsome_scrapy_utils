@@ -14,6 +14,7 @@ def format_sql(words: str):
 
 class MysqlPipeline:
     """
+    异步插入mysql
     settings.py 中需要添加设置
     MYSQL_HOST
     MYSQL_PORT
