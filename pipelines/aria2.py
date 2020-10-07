@@ -49,7 +49,7 @@ class Aria2Pipeline:
         # However,such behavior would cause "never awaited" warning.
         # see https://docs.scrapy.org/en/latest/topics/coroutines.html#coroutine-support
         loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._close_spider()))
+        return Deferred.fromFuture(loop.create_task(self._close_spider(spider)))
 
     async def process_item(self, item, spider):
         ad = ItemAdapter(item)
