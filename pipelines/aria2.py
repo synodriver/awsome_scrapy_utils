@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import asyncio
-from aioaria2 import Aria2HttpClient
+
+from aioaria2 import Aria2WebsocketTrigger
 from aiohttp.client_exceptions import ContentTypeError
 from twisted.internet.defer import Deferred
 from itemadapter import ItemAdapter
@@ -9,6 +10,7 @@ from itemadapter import ItemAdapter
 logger = logging.getLogger(__name__)
 
 
+# TODO 修改为websocket通信
 class Aria2Pipeline:
     """
     可以提交aria2下载的pipeline,比内置的FilePipeline更快
@@ -27,7 +29,7 @@ class Aria2Pipeline:
         self.token = token
         self.url_field = url_field
         self.option_field = option_field
-        self.client: Aria2HttpClient = None
+        self.client: Aria2WebsocketTrigger = None
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -37,7 +39,26 @@ class Aria2Pipeline:
                    crawler.settings.get("ARIA2_OPTION_FIELD", "options"))
 
     def open_spider(self, spider):
-        self.client = Aria2HttpClient(self.id, self.url, token=self.token)
+        loop = asyncio.get_event_loop()
+        return Deferred.fromFuture(loop.create_task(self._open_spider(spider)))
+
+    async def _open_spider(self, spider):
+        self.client = await Aria2WebsocketTrigger.new(self.id, self.url, token=self.token)
+        if hasattr(self, "onResult"):
+            self.client.onResult(self.onResult)
+        if hasattr(self, "onDownloadStart"):
+            self.client.onDownloadStart(self.onDownloadStart)
+        if hasattr(self, "onDownloadPause"):
+            self.client.onDownloadPause(self.onDownloadPause)
+        if hasattr(self, "onDownloadStop"):
+            self.client.onDownloadStop(self.onDownloadStop)
+        if hasattr(self, "onDownloadComplete"):
+            self.client.onDownloadComplete(self.onDownloadComplete)
+        if hasattr(self, "onDownloadError"):
+            self.client.onDownloadError(self.onDownloadError)
+        if hasattr(self, "onBtDownloadComplete"):
+            self.client.onBtDownloadComplete(self.onBtDownloadComplete)
+
         spider.logger.debug("打开Aria2Pipeline")
 
     async def _close_spider(self, spider):
