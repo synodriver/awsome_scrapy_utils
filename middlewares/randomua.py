@@ -63,7 +63,7 @@ class RandomUAMiddleware:
         return s
 
     def process_request(self, request: scrapy.Request, spider):
-        request.headers["user-agent"] = getattr(self.ua, self.ua_type)
+        request.headers["User-Agent"] = getattr(self.ua, self.ua_type)
         logger.debug("修改了headers的ua 为{0}".format(request.headers["user-agent"]))
 
     def process_response(self, request, response, spider):

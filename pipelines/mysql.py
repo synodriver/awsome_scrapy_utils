@@ -3,7 +3,7 @@ import logging
 import asyncio
 
 import aiomysql
-from twisted.internet.defer import Deferred
+from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,8 @@ class MysqlPipeline:
                    crawler.settings.get("MYSQL_DB"), crawler.settings.get("MYSQL_TABLE"))
         return self
 
-    async def _open_spider(self, spider):
+    @deferred_f_from_coro_f
+    async def open_spider(self, spider):
         """
         等下这个要进行twisted套娃
         :param spider:
@@ -46,15 +47,6 @@ class MysqlPipeline:
         self.pool = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
                                                password=self.password, db=self.db, charset="utf8", autocommit=True)
         spider.logger.debug("打开MysqlPipeline 并建立连接")
-
-    def open_spider(self, spider):
-        """
-        用twisted包装
-        :param spider:
-        :return:
-        """
-        loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._open_spider(spider)))
 
     def close_spider(self, spider):
         self.pool.close()
@@ -68,9 +60,9 @@ class MysqlPipeline:
         :return:
         """
         ad = ItemAdapter(item)
-        download_url = format_sql(ad["download_url"])
-        file_name = format_sql(ad["name"])
-        refer = format_sql(ad["refer"])
+        download_url = ad["download_url"]
+        file_name = ad["name"]
+        refer = ad["refer"]
         sql = "insert into %s (download_url,file_name,refer) values (%s,%s,%s)"
         logger.debug("执行sql {0}".format(sql))
         async with self.pool.acquire() as conn:
