@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
 import asyncio
+
 import aiomysql
 from twisted.internet.defer import Deferred
 from itemadapter import ItemAdapter
 
 logger = logging.getLogger(__name__)
-
-
-def format_sql(words: str):
-    return words.replace("\'", "\\\'")
 
 
 class MysqlPipeline:
@@ -25,12 +22,12 @@ class MysqlPipeline:
     """
 
     def __init__(self, host, port, user, password, db, table):
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.db = db
-        self.table = table
+        self.host: str = host
+        self.port: int = port
+        self.user: str = user
+        self.password: str = password
+        self.db: str = db
+        self.table: str = table
         self.pool: aiomysql.Pool = None
 
     @classmethod
@@ -74,14 +71,10 @@ class MysqlPipeline:
         download_url = format_sql(ad["download_url"])
         file_name = format_sql(ad["name"])
         refer = format_sql(ad["refer"])
-        sql = "insert into {0} (download_url,file_name,refer) values (\'{1}\',\'{2}\',\'{3}\')".format(
-            self.table,
-            download_url,
-            file_name,
-            refer)
+        sql = "insert into %s (download_url,file_name,refer) values (%s,%s,%s)"
         logger.debug("执行sql {0}".format(sql))
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cursor:
-                await cursor.execute(sql)
+                await cursor.execute(sql, (self.table, download_url, file_name, refer))
                 await conn.commit()
         return item

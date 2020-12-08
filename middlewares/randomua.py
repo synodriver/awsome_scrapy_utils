@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import random
 import logging
+
+from fake_useragent import UserAgent
 import scrapy
 from scrapy import signals
 
@@ -45,15 +46,24 @@ user_agents = [
 
 
 class RandomUAMiddleware:
+    """
+    需要在settings.py 中加入 RAMDOM_UA_TYPE chrome之类的
+    """
+
+    def __init__(self, ua_type):
+        self.ua: UserAgent = UserAgent(path=r".\fake_useragent_0.1.11.json")
+        self.ua_type: str = ua_type
+
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
-        s = cls()
+        type_ = crawler.settings.get("RAMDOM_UA_TYPE", "ramdom")
+        s = cls(type_)
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
     def process_request(self, request: scrapy.Request, spider):
-        request.headers["user-agent"] = random.choice(user_agents)
+        request.headers["user-agent"] = getattr(self.ua, self.ua_type)
         logger.debug("修改了headers的ua 为{0}".format(request.headers["user-agent"]))
 
     def process_response(self, request, response, spider):

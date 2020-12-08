@@ -4,6 +4,7 @@
 """
 from urllib import parse
 import logging
+
 import scrapy
 from scrapy import signals
 

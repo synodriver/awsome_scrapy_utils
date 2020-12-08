@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
+
 import scrapy.downloadermiddlewares.retry as retry
 from scrapy import signals
 
-
 logger = logging.getLogger(__name__)
-
-
-
 
 
 class LoggedRetryMiddleware(retry.RetryMiddleware):
