@@ -1,40 +1,27 @@
 # -*- coding: utf-8 -*-
 import logging
-import asyncio
 
-import aiomysql
+from databases import Database
 from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
 
 logger = logging.getLogger(__name__)
 
 
-class MysqlPipeline:
+class SqlPipeline:
     """
-    异步插入mysql
+    异步插入mysql postgre 或者sqlite
     settings.py 中需要添加设置
-    MYSQL_HOST
-    MYSQL_PORT
-    MYSQL_USER
-    MYSQL_PASSWORD
-    MYSQL_DB
-    MYSQL_TABLE
+    SQL_URL
     """
 
-    def __init__(self, host, port, user, password, db, table):
-        self.host: str = host
-        self.port: int = port
-        self.user: str = user
-        self.password: str = password
-        self.db: str = db
-        self.table: str = table
-        self.pool: aiomysql.Pool = None
+    def __init__(self, url):
+        self.url = url  # 数据库url
+        self.pool: Database = Database(url)
 
     @classmethod
     def from_crawler(cls, crawler):
-        self = cls(crawler.settings.get("MYSQL_HOST"), crawler.settings.getint("MYSQL_PORT"),
-                   crawler.settings.get("MYSQL_USER"), crawler.settings.get("MYSQL_PASSWORD"),
-                   crawler.settings.get("MYSQL_DB"), crawler.settings.get("MYSQL_TABLE"))
+        self = cls(crawler.settings.get("SQL_URL"))
         return self
 
     @deferred_f_from_coro_f
@@ -44,12 +31,11 @@ class MysqlPipeline:
         :param spider:
         :return:
         """
-        self.pool = await aiomysql.create_pool(host=self.host, port=self.port, user=self.user,
-                                               password=self.password, db=self.db, charset="utf8", autocommit=True)
+        await self.pool.connect()
         spider.logger.debug("打开MysqlPipeline 并建立连接")
 
     def close_spider(self, spider):
-        self.pool.close()
+        await self.pool.disconnect()
         spider.logger.debug("关闭MysqlPipeline")
 
     async def process_item(self, item, spider):
@@ -63,10 +49,7 @@ class MysqlPipeline:
         download_url = ad["download_url"]
         file_name = ad["name"]
         refer = ad["refer"]
-        sql = "insert into %s (download_url,file_name,refer) values (%s,%s,%s)"
+        sql = "insert into test.urls (download_url,file_name,refer) values (:download_url,:file_name,:refer)"
         logger.debug("执行sql {0}".format(sql))
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cursor:
-                await cursor.execute(sql, (self.table, download_url, file_name, refer))
-                await conn.commit()
+        await self.pool.execute(sql, {"download_url": download_url, "file_name": file_name, "refer": refer})
         return item
