@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
-import asyncio
 
 from aioaria2 import Aria2WebsocketTrigger
 from aiohttp.client_exceptions import ContentTypeError
-from twisted.internet.defer import Deferred
+from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
 
 logger = logging.getLogger(__name__)
@@ -22,9 +21,8 @@ class Aria2Pipeline:
     ARIA2_OPTION_FIELD  包含option的字段 默认options
     """
 
-    def __init__(self, id_: str, url: str, token: str, url_field: str,
+    def __init__(self, url: str, token: str, url_field: str,
                  option_field: str):
-        self.id = id_
         self.url = url
         self.token = token
         self.url_field = url_field
@@ -38,14 +36,9 @@ class Aria2Pipeline:
                    crawler.settings.get("ARIA2_URLS_FIELD", "file_urls"),
                    crawler.settings.get("ARIA2_OPTION_FIELD", "options"))
 
-    def open_spider(self, spider):
-        loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._open_spider(spider)))
-
-    async def _open_spider(self, spider):
-        self.client = await Aria2WebsocketTrigger.new(self.id, self.url, token=self.token)
-        if hasattr(self, "onResult"):
-            self.client.onResult(self.onResult)
+    @deferred_f_from_coro_f
+    async def open_spider(self, spider):
+        self.client = await Aria2WebsocketTrigger.new(self.url, token=self.token)
         if hasattr(self, "onDownloadStart"):
             self.client.onDownloadStart(self.onDownloadStart)
         if hasattr(self, "onDownloadPause"):
@@ -61,16 +54,13 @@ class Aria2Pipeline:
 
         spider.logger.debug("打开Aria2Pipeline")
 
-    async def _close_spider(self, spider):
-        await self.client.close()
-        spider.logger.debug("关闭Aria2Pipeline")
-
-    def close_spider(self, spider):
+    @deferred_f_from_coro_f
+    async def close_spider(self, spider):
         # It would be great convenience if this method can be defined with async def.
         # However,such behavior would cause "never awaited" warning.
         # see https://docs.scrapy.org/en/latest/topics/coroutines.html#coroutine-support
-        loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._close_spider(spider)))
+        await self.client.close()
+        spider.logger.debug("关闭Aria2Pipeline")
 
     async def process_item(self, item, spider):
         ad = ItemAdapter(item)

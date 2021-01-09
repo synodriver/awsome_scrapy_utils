@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
-import asyncio
 from typing import List
 import aiofiles
 import scrapy
-from twisted.internet.defer import Deferred
+from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
 
 logger = logging.getLogger(__name__)
@@ -34,22 +33,16 @@ class TextPipeline:
         return cls(crawler.settings.get("TEXT_PATH"), crawler.settings.getlist("TEXT_FIELDS"),
                    crawler.settings.get("TEXT_FORMAT"))
 
-    async def _open_spider(self, spider: scrapy.Spider):
+    @deferred_f_from_coro_f
+    async def open_spider(self, spider: scrapy.Spider):
         self.file = await aiofiles.open(self.path, "a+", encoding="utf-8")
         spider.logger.debug("打开TextPipeline")
 
-    def open_spider(self, spider):
-        loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._open_spider(spider)))
-
-    async def _close_spider(self, spider):
+    @deferred_f_from_coro_f
+    async def close_spider(self, spider):
         await self.file.flush()
         await self.file.close()
         spider.logger.debug("关闭TextPipeline")
-
-    def close_spider(self, spider):
-        loop = asyncio.get_event_loop()
-        return Deferred.fromFuture(loop.create_task(self._close_spider(spider)))
 
     async def process_item(self, item, spider):
         ad = ItemAdapter(item)

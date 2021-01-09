@@ -34,7 +34,8 @@ class SqlPipeline:
         await self.pool.connect()
         spider.logger.debug("打开MysqlPipeline 并建立连接")
 
-    def close_spider(self, spider):
+    @deferred_f_from_coro_f
+    async def close_spider(self, spider):
         await self.pool.disconnect()
         spider.logger.debug("关闭MysqlPipeline")
 
