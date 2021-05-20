@@ -21,7 +21,7 @@ class HttpxDownloadHandler(HTTPDownloadHandler):
         crawler.signals.connect(self._engine_started, signals.engine_started)
 
     @deferred_f_from_coro_f
-    async def _engine_started(self):
+    async def _engine_started(self, signal, sender):
         client = httpx.AsyncClient(http2=True)
         self.client = await client.__aenter__()
 
@@ -35,18 +35,19 @@ class HttpxDownloadHandler(HTTPDownloadHandler):
         response = await self.client.request(request.method,
                                              request.url,
                                              content=request.body,
-                                             headers=request.headers,
+                                             headers=request.headers.to_unicode_dict(),
                                              cookies=request.cookies)
         headers = Headers(response.headers)
         respcls = responsetypes.from_args(headers=headers,
                                           url=response.url,
                                           body=response.content)
-        return respcls(url=response.url,
+        return respcls(url=str(response.url),
                        status=response.status_code,
                        headers=headers,
                        body=response.content,
                        flags=["httpx"],
-                       request=request)
+                       request=request,
+                       protocol=response.http_version)
 
     @deferred_f_from_coro_f
     async def close(self):
