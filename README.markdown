@@ -1,5 +1,6 @@
-## ~~神一样的scrapy的minddlewares,pipelines and extensions~~翔一样的scrapy的minddlewares,pipelines and extensions
+## 一些有用的scrapy工具
 ![python](https://img.shields.io/badge/python-3.7+-red)
+![python](https://img.shields.io/badge/scrapy-2.5+-blue)
 
 - ~~能跑就行（逃~~
 
@@ -10,4 +11,6 @@
 ### warning：~~大部分~~全部需要启用AsyncioReactor
 
 - ~~extension被我吃了~~
+
+- 新增http2 ja3 downloadhandler
 

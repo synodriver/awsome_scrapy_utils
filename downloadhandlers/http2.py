@@ -52,3 +52,4 @@ class HttpxDownloadHandler(HTTPDownloadHandler):
     @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__()
+        await super().close()
