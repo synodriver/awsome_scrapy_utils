@@ -72,6 +72,5 @@ class Aria2Pipeline:
             data = await self.client.addUri(download_url, options)
             logger.debug("downloading {0},aria2 gid {1}".format(download_url, data))
         except ContentTypeError as e:
-            pass
             raise e
         return item

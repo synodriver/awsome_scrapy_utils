@@ -22,7 +22,9 @@ class HttpxMiddleware:
         return s
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            f'Spider  {spider.name} opened middleware: {self.__class__.__name__}'
+        )
 
     async def process_request(self, request: scrapy.Request, spider):
         logger.info("进来的meta是 {0}".format(request.meta))
@@ -32,13 +34,12 @@ class HttpxMiddleware:
                 resp = await client.send(req)
                 body = resp.read()
                 resp_cls: type = responsetypes.from_args(headers=resp.headers, url=resp.url, body=resp.text)
-                response = resp_cls(
+                return resp_cls(
                     url=resp.url,
                     status=resp.status_code,
                     headers=resp.headers,
                     body=body,
                 )
-                return response
 
     def process_response(self, request, response, spider):
         return response

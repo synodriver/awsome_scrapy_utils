@@ -31,10 +31,13 @@ class DeferredMongoDBPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        self = cls(crawler.settings.get("MONGODB_HOST"), crawler.settings.getint("MONGODB_PORT"),
-                   crawler.settings.get("MONGODB_USER"), crawler.settings.get("MONGODB_PASSWORD"),
-                   crawler.settings.get("MONGODB_DB"))
-        return self
+        return cls(
+            crawler.settings.get("MONGODB_HOST"),
+            crawler.settings.getint("MONGODB_PORT"),
+            crawler.settings.get("MONGODB_USER"),
+            crawler.settings.get("MONGODB_PASSWORD"),
+            crawler.settings.get("MONGODB_DB"),
+        )
 
     def open_spider(self, spider):
         self.client = MongoClient(
@@ -75,10 +78,13 @@ class AsyncMongoDBPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        self = cls(crawler.settings.get("MONGODB_HOST"), crawler.settings.getint("MONGODB_PORT"),
-                   crawler.settings.get("MONGODB_USER"), crawler.settings.get("MONGODB_PASSWORD"),
-                   crawler.settings.get("MONGODB_DB"))
-        return self
+        return cls(
+            crawler.settings.get("MONGODB_HOST"),
+            crawler.settings.getint("MONGODB_PORT"),
+            crawler.settings.get("MONGODB_USER"),
+            crawler.settings.get("MONGODB_PASSWORD"),
+            crawler.settings.get("MONGODB_DB"),
+        )
 
     def open_spider(self, spider):
         self.client = motor_asyncio.AsyncIOMotorClient(
@@ -95,5 +101,4 @@ class AsyncMongoDBPipeline:
         logger.debug("执行mongodb的insert_one:{0}".format(obj))
 
 
-if __name__ == "__main__":
-    pass
+pass

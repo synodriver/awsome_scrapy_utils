@@ -24,7 +24,9 @@ class LoggedRetryMiddleware(retry.RetryMiddleware):
         return s
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            f'Spider  {spider.name} opened middleware: {self.__class__.__name__}'
+        )
 
     def _retry(self, request, reason, spider):
         retries = request.meta.get('retry_times', 0) + 1
@@ -50,7 +52,7 @@ class LoggedRetryMiddleware(retry.RetryMiddleware):
                 reason = retry.global_object_name(reason.__class__)
 
             stats.inc_value('retry/count')
-            stats.inc_value('retry/reason_count/%s' % reason)
+            stats.inc_value(f'retry/reason_count/{reason}')
             return retryreq
         else:
             stats.inc_value('retry/max_reached')

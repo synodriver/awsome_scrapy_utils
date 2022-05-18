@@ -22,7 +22,10 @@ class PHPPathMiddleware:
         return s
 
     def process_request(self, request: scrapy.Request, spider):
-        request.headers[":path"] = parse.urlsplit(request.url).path + "?" + parse.urlsplit(request.url).query
+        request.headers[
+            ":path"
+        ] = f"{parse.urlsplit(request.url).path}?{parse.urlsplit(request.url).query}"
+
         logger.debug("修改了headers的:path 为{0}".format(request.headers[":path"]))
 
     def process_response(self, request, response, spider):
@@ -32,4 +35,6 @@ class PHPPathMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            f'Spider  {spider.name} opened middleware: {self.__class__.__name__}'
+        )

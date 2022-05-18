@@ -28,9 +28,7 @@ class SSLFactory:
 
     def __call__(self) -> ssl.SSLContext:
         random.shuffle(self.ciphers)
-        ciphers = ":".join(self.ciphers)
-        ciphers = ciphers + ":!aNULL:!eNULL:!MD5"
-
+        ciphers = ":".join(self.ciphers) + ":!aNULL:!eNULL:!MD5"
         context = ssl.create_default_context()
         context.set_ciphers(ciphers)
         return context

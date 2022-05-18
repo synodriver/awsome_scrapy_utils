@@ -73,4 +73,6 @@ class RandomUAMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            f'Spider  {spider.name} opened middleware: {self.__class__.__name__}'
+        )

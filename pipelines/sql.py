@@ -21,8 +21,7 @@ class SqlPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        self = cls(crawler.settings.get("SQL_URL"))
-        return self
+        return cls(crawler.settings.get("SQL_URL"))
 
     @deferred_f_from_coro_f
     async def open_spider(self, spider):

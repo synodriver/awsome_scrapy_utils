@@ -17,8 +17,7 @@ class JsonPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        self = cls(crawler.settings.get("JSON_PATH"))
-        return self
+        return cls(crawler.settings.get("JSON_PATH"))
 
     def open_spider(self, spider: scrapy.Spider):
         self.file = open(self.path, "wb+")
