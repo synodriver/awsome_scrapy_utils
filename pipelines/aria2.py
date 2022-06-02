@@ -14,15 +14,16 @@ class Aria2Pipeline:
     """
     可以提交aria2下载的pipeline,比内置的FilePipeline更快
     需要如下设置
-    ARIA2_ID
     ARIA2_URL aria2地址
     ARIA2_TOKEN  默认None
     ARIA2_URLS_FIELD 包含url的字段 默认file_urls
     ARIA2_OPTION_FIELD  包含option的字段 默认options
     """
 
-    def __init__(self, url: str, token: str, url_field: str,
-                 option_field: str):
+    def __init__(self, url: str, 
+                       token: str, 
+                       url_field: str,
+                       option_field: str):
         self.url = url
         self.token = token
         self.url_field = url_field
@@ -31,7 +32,7 @@ class Aria2Pipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler.settings.get("ARIA2_ID"), crawler.settings.get("ARIA2_URL"),
+        return cls(crawler.settings.get("ARIA2_URL"),
                    crawler.settings.get("ARIA2_TOKEN"),
                    crawler.settings.get("ARIA2_URLS_FIELD", "file_urls"),
                    crawler.settings.get("ARIA2_OPTION_FIELD", "options"))
