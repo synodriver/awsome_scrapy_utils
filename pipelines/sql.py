@@ -54,3 +54,36 @@ class SqlPipeline:
         logger.debug("执行sql {0}".format(sql))
         await self.pool.execute(sql, {"download_url": download_url, "file_name": file_name, "refer": refer})
         return item
+    
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import SQLModel, Session
+import logging
+logging.getLogger("aiosqlite").setLevel(logging.INFO)
+
+
+class SQLModulePipeline:
+    def __init__(self, url: str, echo: bool = False):
+        """
+        :param url: DB's url
+        """
+        self.url = url
+        self.echo = echo
+        self.engine = None
+
+    @classmethod
+    def from_crawler(cls, crawler: Crawler):
+        return cls(crawler.settings.get("SQL_URL"), crawler.settings.getbool("SQL_ECHO"))
+
+    def open_spider(self, spider: scrapy.Spider):
+        spider.logger.debug("打开sqlmodel")
+        self.engine = create_async_engine(self.url, echo = self.echo)
+
+    async def process_item(self, item, spider):
+        async with AsyncSession(self.engine) as session:
+            session.add(item)
+            await session.commit()
+
+    def close_spider(self, spider):
+        self.engine = None
+        spider.logger.debug("关闭sqlmodel")
