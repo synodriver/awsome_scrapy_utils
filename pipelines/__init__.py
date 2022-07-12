@@ -5,6 +5,12 @@ from .mongodb import AsyncMongoDBPipeline, DeferredMongoDBPipeline
 from .sql import SqlPipeline
 from .text import TextPipeline
 
-__all__ = ["Aria2Pipeline", "JsonPipeline", "AsyncMongoDBPipeline", "DeferredMongoDBPipeline", "SqlPipeline",
-           "TextPipeline"]
+__all__ = [
+    "Aria2Pipeline",
+    "JsonPipeline",
+    "AsyncMongoDBPipeline",
+    "DeferredMongoDBPipeline",
+    "SqlPipeline",
+    "TextPipeline",
+]
 __author__ = "synodriver"

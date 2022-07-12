@@ -1,7 +1,9 @@
-# -*- coding: utf-8 -*-
+import asyncio
+from functools import partial
 from typing import Optional
 
-import httpx
+from requests import Session
+from requests_curl import CURLAdapter
 from scrapy import signals
 from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
 from scrapy.crawler import Crawler
@@ -9,50 +11,52 @@ from scrapy.http import Headers, Request, Response
 from scrapy.responsetypes import responsetypes
 from scrapy.settings import Settings
 from scrapy.spiders import Spider
-from scrapy.utils.defer import deferred_f_from_coro_f, deferred_from_coro
+from scrapy.utils.defer import deferred_from_coro
 from twisted.internet.defer import Deferred
 
 
-class HttpxDownloadHandler(HTTPDownloadHandler):
+class CurlDownloadHandler(HTTPDownloadHandler):
     def __init__(self, settings: Settings, crawler: Optional[Crawler] = None):
         super().__init__(settings, crawler)
-        self.client = None
+        self.client = None  # type: Session
         crawler.signals.connect(self._engine_started, signals.engine_started)
 
-    @deferred_f_from_coro_f
-    async def _engine_started(self, signal, sender):
-        client = httpx.AsyncClient(http2=True)
-        self.client = await client.__aenter__()
+    def _engine_started(self, signal, sender):
+        client = Session()
+        client.mount("https://", CURLAdapter())
+        client.headers = {}
+        self.client = client.__enter__()
 
     def download_request(self, request: Request, spider: Spider) -> Deferred:
-        if request.meta.get("h2"):
+        if request.meta.get("tls"):
             return deferred_from_coro(self._download_request(request, spider))
         return super().download_request(request, spider)  # 普通下载
 
     async def _download_request(self, request: Request, spider: Spider) -> Response:
-        """httpx下载逻辑"""
-        response = await self.client.request(
+        """pycurl下载逻辑"""
+        # asyncio.get_running_loop().run_in_executor(None, self.client.request, request.method)
+        pfunc = partial(
+            self.client.request,
             request.method,
             request.url,
-            content=request.body,
+            data=request.body,
             headers=request.headers.to_unicode_dict(),
             cookies=request.cookies,
         )
+        response = await asyncio.get_running_loop().run_in_executor(None, pfunc)
+
         headers = Headers(response.headers)
         respcls = responsetypes.from_args(
             headers=headers, url=response.url, body=response.content
         )
         return respcls(
-            url=str(response.url),
+            url=response.url,
             status=response.status_code,
             headers=headers,
             body=response.content,
-            flags=["httpx"],
+            flags=["antitls"],
             request=request,
-            protocol=response.http_version,
-        )
+        )  # scrapy 2.6
 
-    @deferred_f_from_coro_f
-    async def close(self):
-        await self.client.__aexit__()
-        await super().close()
+    def close(self):
+        self.client.__exit__()

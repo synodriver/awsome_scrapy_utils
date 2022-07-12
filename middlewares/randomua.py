@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from fake_useragent import UserAgent
 import scrapy
+from fake_useragent import UserAgent
 from scrapy import signals
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ user_agents = [
     "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.0) Opera 12.14",
     "Opera/9.80 (Windows NT 5.1; U; zh-sg) Presto/2.9.181 Version/12.00",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Mobile/15E148 Safari/604.1"
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Mobile/15E148 Safari/604.1",
 ]
 
 
@@ -73,4 +73,6 @@ class RandomUAMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            "Spider  %s opened middleware: %s" % (spider.name, self.__class__.__name__)
+        )

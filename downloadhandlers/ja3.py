@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
 import random
 import ssl
+from typing import Optional
+
+import aiohttp
+from scrapy import signals
+from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
+from scrapy.crawler import Crawler
+from scrapy.http import Headers, Request, Response
+from scrapy.responsetypes import responsetypes
+from scrapy.settings import Settings
+from scrapy.spiders import Spider
+from scrapy.utils.defer import deferred_f_from_coro_f, deferred_from_coro
+from twisted.internet.defer import Deferred
 
 # ssl._create_default_https_context = ssl._create_unverified_context
 
-from twisted.internet.defer import Deferred
 
-from scrapy import signals
-from scrapy.http import Request, Response, Headers
-from scrapy.spiders import Spider
-from scrapy.settings import Settings
-from scrapy.crawler import Crawler
-from scrapy.utils.defer import deferred_from_coro, deferred_f_from_coro_f
-from scrapy.responsetypes import responsetypes
-from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
-
-import aiohttp
-
-ORIGIN_CIPHERS = ('ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
-                  'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES')
+ORIGIN_CIPHERS = (
+    "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:"
+    "DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES"
+)
 
 
 class SSLFactory:
@@ -57,24 +58,28 @@ class Ja3DownloadHandler(HTTPDownloadHandler):
 
     async def _download_request(self, request: Request, spider: Spider) -> Response:
         """aiohttp下载逻辑"""
-        async with self.client.request(request.method,
-                                       request.url,
-                                       data=request.body,
-                                       headers=request.headers.to_unicode_dict(),
-                                       cookies=request.cookies,
-                                       ssl=sslgen()) as response:
+        async with self.client.request(
+            request.method,
+            request.url,
+            data=request.body,
+            headers=request.headers.to_unicode_dict(),
+            cookies=request.cookies,
+            ssl=sslgen(),
+        ) as response:
             headers = Headers(response.headers)
             body = await response.read()
-            respcls = responsetypes.from_args(headers=headers,
-                                              url=str(response.url),
-                                              body=body)
-            return respcls(url=str(response.url),
-                           status=response.status,
-                           headers=headers,
-                           body=body,
-                           flags=["ja3"],
-                           request=request,
-                           protocol=response.version)
+            respcls = responsetypes.from_args(
+                headers=headers, url=str(response.url), body=body
+            )
+            return respcls(
+                url=str(response.url),
+                status=response.status,
+                headers=headers,
+                body=body,
+                flags=["ja3"],
+                request=request,
+                protocol=response.version,
+            )
 
     @deferred_f_from_coro_f
     async def close(self):

@@ -24,23 +24,27 @@ class LoggedRetryMiddleware(retry.RetryMiddleware):
         return s
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            "Spider  %s opened middleware: %s" % (spider.name, self.__class__.__name__)
+        )
 
     def _retry(self, request, reason, spider):
-        retries = request.meta.get('retry_times', 0) + 1
+        retries = request.meta.get("retry_times", 0) + 1
 
         retry_times = self.max_retry_times
 
-        if 'max_retry_times' in request.meta:
-            retry_times = request.meta['max_retry_times']
+        if "max_retry_times" in request.meta:
+            retry_times = request.meta["max_retry_times"]
 
         stats = spider.crawler.stats
         if retries <= retry_times:
-            logger.debug("Retrying %(request)s (failed %(retries)d times): %(reason)s",
-                         {'request': request, 'retries': retries, 'reason': reason},
-                         extra={'spider': spider})
+            logger.debug(
+                "Retrying %(request)s (failed %(retries)d times): %(reason)s",
+                {"request": request, "retries": retries, "reason": reason},
+                extra={"spider": spider},
+            )
             retryreq = request.copy()
-            retryreq.meta['retry_times'] = retries
+            retryreq.meta["retry_times"] = retries
             # retryreq.meta["use_aiohttp"] = True
             # logger.debug("给meta添加字段{0}".format(retryreq.meta))
             retryreq.dont_filter = True
@@ -49,13 +53,15 @@ class LoggedRetryMiddleware(retry.RetryMiddleware):
             if isinstance(reason, Exception):
                 reason = retry.global_object_name(reason.__class__)
 
-            stats.inc_value('retry/count')
-            stats.inc_value('retry/reason_count/%s' % reason)
+            stats.inc_value("retry/count")
+            stats.inc_value("retry/reason_count/%s" % reason)
             return retryreq
         else:
-            stats.inc_value('retry/max_reached')
-            logger.error("Gave up retrying %(request)s (failed %(retries)d times): %(reason)s",
-                         {'request': request, 'retries': retries, 'reason': reason},
-                         extra={'spider': spider})
+            stats.inc_value("retry/max_reached")
+            logger.error(
+                "Gave up retrying %(request)s (failed %(retries)d times): %(reason)s",
+                {"request": request, "retries": retries, "reason": reason},
+                extra={"spider": spider},
+            )
             with open(self.log_path, "a+", encoding="utf-8") as f:
                 f.write(request.url + "\n")

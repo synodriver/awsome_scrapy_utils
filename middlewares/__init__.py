@@ -4,5 +4,10 @@ from .phppath import PHPPathMiddleware
 from .randomua import RandomUAMiddleware
 from .retry import LoggedRetryMiddleware
 
-__all__ = ["AiohttpMiddleware", "PHPPathMiddleware", "RandomUAMiddleware", "LoggedRetryMiddleware"]
+__all__ = [
+    "AiohttpMiddleware",
+    "PHPPathMiddleware",
+    "RandomUAMiddleware",
+    "LoggedRetryMiddleware",
+]
 __author__ = "synodriver"

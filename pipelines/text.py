@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import List
+
 import aiofiles
 import scrapy
-from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
+from scrapy.utils.defer import deferred_f_from_coro_f
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,11 @@ class TextPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler.settings.get("TEXT_PATH"), crawler.settings.getlist("TEXT_FIELDS"),
-                   crawler.settings.get("TEXT_FORMAT"))
+        return cls(
+            crawler.settings.get("TEXT_PATH"),
+            crawler.settings.getlist("TEXT_FIELDS"),
+            crawler.settings.get("TEXT_FORMAT"),
+        )
 
     @deferred_f_from_coro_f
     async def open_spider(self, spider: scrapy.Spider):

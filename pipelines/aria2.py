@@ -3,8 +3,8 @@ import logging
 
 from aioaria2 import Aria2WebsocketTrigger
 from aiohttp.client_exceptions import ContentTypeError
-from scrapy.utils.defer import deferred_f_from_coro_f
 from itemadapter import ItemAdapter
+from scrapy.utils.defer import deferred_f_from_coro_f
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,7 @@ class Aria2Pipeline:
     ARIA2_OPTION_FIELD  包含option的字段 默认options
     """
 
-    def __init__(self, url: str, 
-                       token: str, 
-                       url_field: str,
-                       option_field: str):
+    def __init__(self, url: str, token: str, url_field: str, option_field: str):
         self.url = url
         self.token = token
         self.url_field = url_field
@@ -32,10 +29,12 @@ class Aria2Pipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(crawler.settings.get("ARIA2_URL"),
-                   crawler.settings.get("ARIA2_TOKEN"),
-                   crawler.settings.get("ARIA2_URLS_FIELD", "file_urls"),
-                   crawler.settings.get("ARIA2_OPTION_FIELD", "options"))
+        return cls(
+            crawler.settings.get("ARIA2_URL"),
+            crawler.settings.get("ARIA2_TOKEN"),
+            crawler.settings.get("ARIA2_URLS_FIELD", "file_urls"),
+            crawler.settings.get("ARIA2_OPTION_FIELD", "options"),
+        )
 
     @deferred_f_from_coro_f
     async def open_spider(self, spider):

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import httpx
+import scrapy
 from scrapy import signals
 from scrapy.responsetypes import responsetypes
-import scrapy
-import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,9 @@ class HttpxMiddleware:
         return s
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider  %s opened middleware: %s' % (spider.name, self.__class__.__name__))
+        spider.logger.info(
+            "Spider  %s opened middleware: %s" % (spider.name, self.__class__.__name__)
+        )
 
     async def process_request(self, request: scrapy.Request, spider):
         logger.info("进来的meta是 {0}".format(request.meta))
@@ -31,7 +33,9 @@ class HttpxMiddleware:
                 req = client.build_request(request.method, request.url)
                 resp = await client.send(req)
                 body = resp.read()
-                resp_cls: type = responsetypes.from_args(headers=resp.headers, url=resp.url, body=resp.text)
+                resp_cls: type = responsetypes.from_args(
+                    headers=resp.headers, url=resp.url, body=resp.text
+                )
                 response = resp_cls(
                     url=resp.url,
                     status=resp.status_code,
