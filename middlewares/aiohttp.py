@@ -48,5 +48,4 @@ class AiohttpMiddleware:
         return response
 
     def process_exception(self, request, exception, spider):
-
         pass

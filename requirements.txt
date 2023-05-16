@@ -7,3 +7,4 @@ aiohttp>=3.6.2
 motor>=2.3.0
 httpx>=0.16.1
 itemloaders>=1.0.3
+aiodns
