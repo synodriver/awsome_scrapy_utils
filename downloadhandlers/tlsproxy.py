@@ -87,6 +87,10 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
             post_data["pskkey_exchange_modes"] = request.meta["tls"][
                 "pskkey_exchange_modes"
             ]
+        if "signature_algorithms_cert" in request.meta["tls"]:
+            post_data["signature_algorithms_cert"] = request.meta["tls"][
+                "signature_algorithms_cert"
+            ]
         if "key_share_curves" in request.meta["tls"]:
             post_data["key_share_curves"] = request.meta["tls"]["key_share_curves"]
         if "h2settings" in request.meta["tls"]:

@@ -29,6 +29,9 @@ class CachingAsyncResolver(CachingThreadedResolver):
     ):
         super().__init__(reactor, cache_size, timeout)
         self._resolver = aiodns.DNSResolver(nameservers, None, **kwargs)
+        self._pattern = re.compile(
+            r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)"
+        )
 
     @classmethod
     def from_crawler(cls, crawler: scrapy.crawler.Crawler, reactor):
@@ -49,6 +52,8 @@ class CachingAsyncResolver(CachingThreadedResolver):
         return deferred_from_coro(self._getHostByName(name, timeout))
 
     async def _getHostByName(self, name, timeout=None):
+        if self._pattern.match(name) is not None:  # just an ip
+            return name
         if name in dnscache:
             return dnscache[name]
         try:
@@ -86,6 +91,9 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             else endpoints
         )
         self._client_session = aiohttp.ClientSession()
+        self._pattern = re.compile(
+            r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)"
+        )
 
     @classmethod
     def from_crawler(cls, crawler, reactor):
@@ -104,6 +112,8 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
         return deferred_from_coro(self._getHostByName(name, timeout))
 
     async def _getHostByName(self, name, timeout=None):
+        if self._pattern.match(name) is not None:  # just an ip
+            return name
         if name in dnscache:
             return dnscache[name]
         done, pending = await asyncio.wait(
@@ -156,15 +166,12 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             raise Exception("Failed to resolve {}".format(hostname))
 
         # Pattern to match IPv4 addresses
-        pattern = re.compile(
-            r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)"
-        )
         result = []
 
         for i in data["Answer"]:
             ip = i["data"]
 
-            if pattern.match(ip) is not None:
+            if self._pattern.match(ip) is not None:
                 result.append(ip)
 
         return result
