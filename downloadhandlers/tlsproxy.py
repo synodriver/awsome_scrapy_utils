@@ -67,6 +67,8 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
             post_data["cert"] = request.meta["tls"]["cert"]
         if "ja3" in request.meta["tls"]:
             post_data["ja3"] = request.meta["tls"]["ja3"]
+        if "force_http1" in request.meta["tls"]:
+            post_data["force_http1"] = request.meta["tls"]["force_http1"]
         if "supported_signature_algorithms" in request.meta["tls"]:
             post_data["supported_signature_algorithms"] = request.meta["tls"][
                 "supported_signature_algorithms"
