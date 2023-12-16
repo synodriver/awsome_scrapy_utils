@@ -82,4 +82,4 @@ class CurlCFFIDownloadHandler(HTTPDownloadHandler):
     async def close(self):
         # print(f"{self.__class__.__name__} aexit")  # todo del
         await self.session.__aexit__()
-        super(CurlCFFIDownloadHandler, self).close()
+        await super(CurlCFFIDownloadHandler, self).close()
