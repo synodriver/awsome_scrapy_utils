@@ -1,9 +1,16 @@
 import random
 from typing import Optional
 from urllib.parse import urldefrag
-
-from curl_cffi import const, curl
-from curl_cffi.requests import AsyncSession
+try:
+    import cycurl
+    from cycurl import CurlError
+    from cycurl.requests import AsyncSession
+    OPERATION_TIMEDOUT = cycurl.CURLE_OPERATION_TIMEDOUT
+except ImportError:
+    from curl_cffi import CurlError
+    from curl_cffi.const import CurlECode
+    from curl_cffi.requests import AsyncSession
+    OPERATION_TIMEDOUT = CurlECode.OPERATION_TIMEDOUT
 from scrapy import signals
 from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
 from scrapy.crawler import Crawler
@@ -56,8 +63,8 @@ class CurlCFFIDownloadHandler(HTTPDownloadHandler):
                 timeout=timeout,
                 impersonate=impersonate,
             )
-        except curl.CurlError as e:
-            if e.code == const.CurlECode.OPERATION_TIMEDOUT:
+        except CurlError as e:
+            if e.code == OPERATION_TIMEDOUT:
                 url = urldefrag(request.url)[0]
                 raise TimeoutError(
                     f"Requesting {url} took longer than {timeout} seconds."
