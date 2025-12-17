@@ -114,6 +114,7 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
             respjson = await response.json()
             status = respjson["status"]
             headers = Headers(respjson["headers"])
+            del headers["content-encoding"]  # 防止scrapy二次解压
             body = base64.b64decode(respjson["body"])
             respcls = responsetypes.from_args(
                 headers=headers, url=str(response.url), body=body
@@ -131,4 +132,4 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
     @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__(None, None, None)
-        await super().close()
+        super().close()

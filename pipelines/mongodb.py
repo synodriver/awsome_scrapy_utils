@@ -3,8 +3,7 @@ import logging
 
 import scrapy
 from itemadapter import ItemAdapter
-from motor import motor_asyncio
-from pymongo import MongoClient
+from pymongo import MongoClient, AsyncMongoClient
 from twisted.internet.threads import deferToThread
 
 logger = logging.getLogger(__name__)
@@ -91,7 +90,7 @@ class AsyncMongoDBPipeline:
         return self
 
     def open_spider(self, spider):
-        self.client = motor_asyncio.AsyncIOMotorClient(
+        self.client = AsyncMongoClient(
             "mongodb://{user}:{password}@{host}:{port}".format(
                 user=self.user, password=self.password, host=self.host, port=self.port
             )

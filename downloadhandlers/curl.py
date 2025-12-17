@@ -44,7 +44,7 @@ class CurlDownloadHandler(HTTPDownloadHandler):
             cookies=request.cookies,
         )
         response = await asyncio.get_running_loop().run_in_executor(None, pfunc)
-
+        del response.headers["content-encoding"]  # 防止scrapy二次解压
         headers = Headers(response.headers)
         respcls = responsetypes.from_args(
             headers=headers, url=response.url, body=response.content
@@ -60,3 +60,4 @@ class CurlDownloadHandler(HTTPDownloadHandler):
 
     def close(self):
         self.client.__exit__()
+        super().close()

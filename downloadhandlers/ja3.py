@@ -66,6 +66,7 @@ class Ja3DownloadHandler(HTTPDownloadHandler):
             cookies=request.cookies,
             ssl=sslgen(),
         ) as response:
+            del response.headers["content-encoding"]  # 防止scrapy二次解压
             headers = Headers(response.headers)
             body = await response.read()
             respcls = responsetypes.from_args(
@@ -84,4 +85,4 @@ class Ja3DownloadHandler(HTTPDownloadHandler):
     @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__(None, None, None)
-        await super().close()
+        super().close()

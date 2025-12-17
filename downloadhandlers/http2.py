@@ -38,6 +38,7 @@ class HttpxDownloadHandler(HTTPDownloadHandler):
             headers=request.headers.to_unicode_dict(),
             cookies=request.cookies,
         )
+        del response.headers["content-encoding"]  # 防止scrapy二次解压
         headers = Headers(response.headers)
         respcls = responsetypes.from_args(
             headers=headers, url=response.url, body=response.content
@@ -55,4 +56,4 @@ class HttpxDownloadHandler(HTTPDownloadHandler):
     @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__()
-        await super().close()
+        super().close()

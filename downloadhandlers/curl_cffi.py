@@ -1,15 +1,18 @@
 import random
 from typing import Optional
 from urllib.parse import urldefrag
+
 try:
     import cycurl
     from cycurl import CurlError
     from cycurl.requests import AsyncSession
+
     OPERATION_TIMEDOUT = cycurl.CURLE_OPERATION_TIMEDOUT
 except ImportError:
     from curl_cffi import CurlError
     from curl_cffi.const import CurlECode
     from curl_cffi.requests import AsyncSession
+
     OPERATION_TIMEDOUT = CurlECode.OPERATION_TIMEDOUT
 from scrapy import signals
 from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
@@ -70,7 +73,7 @@ class CurlCFFIDownloadHandler(HTTPDownloadHandler):
                     f"Requesting {url} took longer than {timeout} seconds."
                 ) from e
 
-
+        del response.headers["content-encoding"]  # 防止scrapy二次解压
         headers = Headers(response.headers)
         respcls = responsetypes.from_args(
             headers=headers, url=response.url, body=response.content
@@ -89,4 +92,4 @@ class CurlCFFIDownloadHandler(HTTPDownloadHandler):
     async def close(self):
         # print(f"{self.__class__.__name__} aexit")  # todo del
         await self.session.__aexit__()
-        await super(CurlCFFIDownloadHandler, self).close()
+        super(CurlCFFIDownloadHandler, self).close()
