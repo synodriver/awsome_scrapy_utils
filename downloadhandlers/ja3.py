@@ -5,7 +5,7 @@ from typing import Optional
 
 import aiohttp
 from scrapy import signals
-from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
+from scrapy.core.downloader.handlers.http11 import HTTP11DownloadHandler as HTTPDownloadHandler
 from scrapy.crawler import Crawler
 from scrapy.http import Headers, Request, Response
 from scrapy.responsetypes import responsetypes
@@ -41,22 +41,21 @@ sslgen = SSLFactory()
 
 
 class Ja3DownloadHandler(HTTPDownloadHandler):
-    def __init__(self, settings: Settings, crawler: Optional[Crawler] = None):
-        super().__init__(settings, crawler)
+    def __init__(self, crawler: Optional[Crawler] = None):
+        super().__init__(crawler)
         self.client = None
-        crawler.signals.connect(self._engine_started, signals.engine_started)
+        crawler.signals.connect(self.engine_started, signals.engine_started)
 
-    @deferred_f_from_coro_f
-    async def _engine_started(self, signal, sender):
+    async def engine_started(self, signal, sender):
         client = aiohttp.ClientSession()
         self.client = await client.__aenter__()
 
-    def download_request(self, request: Request, spider: Spider) -> Deferred:
+    async def download_request(self, request: Request) -> Response:
         if request.meta.get("ja3"):
-            return deferred_from_coro(self._download_request(request, spider))
-        return super().download_request(request, spider)  # 普通下载
+            return await self._download_request(request)
+        return await super().download_request(request)  # 普通下载
 
-    async def _download_request(self, request: Request, spider: Spider) -> Response:
+    async def _download_request(self, request: Request) -> Response:
         """aiohttp下载逻辑"""
         async with self.client.request(
             request.method,
@@ -82,7 +81,6 @@ class Ja3DownloadHandler(HTTPDownloadHandler):
                 protocol=response.version,
             )
 
-    @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__(None, None, None)
-        super().close()
+        await super().close()

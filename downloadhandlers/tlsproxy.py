@@ -4,7 +4,7 @@ from typing import Optional
 
 import aiohttp
 from scrapy import signals
-from scrapy.core.downloader.handlers.http import HTTPDownloadHandler
+from scrapy.core.downloader.handlers.http11 import HTTP11DownloadHandler as HTTPDownloadHandler
 from scrapy.crawler import Crawler
 from scrapy.http import Headers, Request, Response
 from scrapy.responsetypes import responsetypes
@@ -17,31 +17,30 @@ from twisted.internet.defer import Deferred
 
 
 class TLSProxyDownloadHandler(HTTPDownloadHandler):
-    def __init__(self, settings: Settings, crawler: Optional[Crawler] = None):
-        super().__init__(settings, crawler)
+    def __init__(self, crawler: Optional[Crawler] = None):
+        super().__init__(crawler)
         self.client = None  # type: aiohttp.ClientSession
-        crawler.signals.connect(self._engine_started, signals.engine_started)
+        crawler.signals.connect(self.engine_started, signals.engine_started)
 
-    @deferred_f_from_coro_f
-    async def _engine_started(self, signal, sender):
+    async def engine_started(self, signal, sender):
         client = aiohttp.ClientSession()
         self.client = await client.__aenter__()
 
-    def download_request(self, request: Request, spider: Spider) -> Deferred:
+    async def download_request(self, request: Request) -> Response:
         """
         启动此handler方法是request.meta['tls'] = {"someextraconfig": xxx}
         """
         if "tls" in request.meta:
-            return deferred_from_coro(self._download_request(request, spider))
-        return super().download_request(request, spider)  # 普通下载
+            return await self._download_request(request)
+        return await super().download_request(request)  # 普通下载
 
-    async def _download_request(self, request: Request, spider: Spider) -> Response:
+    async def _download_request(self, request: Request) -> Response:
         """转发给tlsproxy下载逻辑"""
         post_data = {
             "method": request.method,
             "url": request.url,
             "timeout": request.meta.get(
-                "download_timeout", spider.settings.get("DOWNLOAD_TIMEOUT")
+                "download_timeout", self.crawler.settings.get("DOWNLOAD_TIMEOUT")
             ),
             "headers": request.headers.to_unicode_dict(),
         }
@@ -57,7 +56,7 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
             "dont_redirect", False
         ):  # and not spider.settings.get("REDIRECT_ENABLED", True):
             post_data["allow_redirects"] = False
-        if "dont_redirect" not in request.meta and not spider.settings.get(
+        if "dont_redirect" not in request.meta and not self.crawler.settings.get(
             "REDIRECT_ENABLED", True
         ):
             post_data["allow_redirects"] = False
@@ -107,7 +106,7 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
             post_data["h2priorityframes"] = request.meta["tls"]["h2priorityframes"]
 
         async with self.client.post(
-            spider.settings.get("TLSPROXY", "http://127.0.0.1:11000/request"),
+            self.crawler.settings.get("TLSPROXY", "http://127.0.0.1:11000/request"),
             json=post_data,
         ) as response:
             # headers = Headers(response.headers)
@@ -129,7 +128,6 @@ class TLSProxyDownloadHandler(HTTPDownloadHandler):
                 # protocol=response.version,
             )
 
-    @deferred_f_from_coro_f
     async def close(self):
         await self.client.__aexit__(None, None, None)
-        super().close()
+        await super().close()

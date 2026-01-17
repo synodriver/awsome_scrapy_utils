@@ -58,7 +58,7 @@ class CachingAsyncResolver(CachingThreadedResolver):
             return dnscache[name]
         try:
             resp = await asyncio.wait_for(
-                self._resolver.gethostbyname(name, socket.AF_INET), timeout
+                self._resolver.getaddrinfo(name, socket.AF_INET), timeout
             )
             result = resp.addresses[0]
             self._cache_result(result, name)
@@ -90,7 +90,7 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             if not endpoints
             else endpoints
         )
-        self._client_session = aiohttp.ClientSession()
+        self._client_session = None
         self._pattern = re.compile(
             r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)"
         )
@@ -144,6 +144,8 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             "do": "false",
             "cd": "false",
         }
+        if self._client_session is None:
+            self._client_session = aiohttp.ClientSession()
 
         async with self._client_session.get(
             endpoint,
