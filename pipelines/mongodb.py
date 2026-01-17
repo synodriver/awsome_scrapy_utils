@@ -3,7 +3,7 @@ import logging
 
 import scrapy
 from itemadapter import ItemAdapter
-from pymongo import MongoClient, AsyncMongoClient
+from pymongo import AsyncMongoClient, MongoClient
 from twisted.internet.threads import deferToThread
 
 logger = logging.getLogger(__name__)

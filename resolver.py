@@ -60,8 +60,8 @@ class CachingAsyncResolver(CachingThreadedResolver):
             resp = await asyncio.wait_for(
                 self._resolver.getaddrinfo(name, socket.AF_INET), timeout
             )
-            result = resp.addresses[0]
-            self._cache_result(result, name)
+            result = resp.nodes[0].addr[0].decode()
+            dnscache[name] = result
             return result
         except asyncio.TimeoutError:
             raise
@@ -76,7 +76,14 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
     Doh resolver
     """
 
-    def __init__(self, reactor, cache_size, timeout, endpoints: List[str] = None):
+    def __init__(
+        self,
+        reactor,
+        cache_size,
+        timeout,
+        endpoints: List[str] = None,
+        boot: List[str] = None,
+    ):
         super().__init__(reactor, cache_size, timeout)
 
         self.endpoints = (
@@ -86,6 +93,8 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
                 "https://[2606:4700:4700::1001]/dns-query",
                 "https://[2606:4700:4700::1111]/dns-query",
                 "https://cloudflare-dns.com/dns-query",
+                "https://dns.google/resolve",
+                "https://doh.opendns.com/dns-query",
             ]
             if not endpoints
             else endpoints
@@ -94,6 +103,10 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
         self._pattern = re.compile(
             r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)"
         )
+        self._boot = boot or [
+            "8.8.8.8"
+        ]  # bootstrap DNS server for aiohttp resolver, and then connect to the real DOH servers
+        print(self._boot)
 
     @classmethod
     def from_crawler(cls, crawler, reactor):
@@ -106,6 +119,7 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             cache_size,
             crawler.settings.getfloat("DNS_TIMEOUT"),
             crawler.settings.getlist("DOH_ENDPOINTS", None),
+            crawler.settings.getlist("DOH_BOOT", None),
         )
 
     def getHostByName(self, name, timeout=None):
@@ -116,28 +130,40 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             return name
         if name in dnscache:
             return dnscache[name]
-        done, pending = await asyncio.wait(
-            [
-                asyncio.create_task(
-                    self._resolve(endpoint, name, socket.AF_INET, timeout)
-                )
-                for endpoint in self.endpoints
-            ],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-        for task in pending:
+
+        queue = asyncio.Queue()
+        tasks = [
+            asyncio.create_task(self._resolve(endpoint, name, socket.AF_INET, timeout, queue))
+            for endpoint in self.endpoints
+        ]
+        ips = await queue.get()
+        for task in tasks:
             task.cancel()
             try:
                 await task
             except asyncio.CancelledError:
                 pass
-        first_task = done.pop()
-        ips = first_task.result()
         result = ips[0]
-        self._cache_result(result, name)
+        print("got ip", result)
+        dnscache[name] = result
         return result
 
-    async def _resolve(self, endpoint, hostname, family, timeout=5) -> List[str]:
+        # for task in asyncio.as_completed(tasks):
+        #     try:
+        #         ips = await task
+        #         result = ips[0]
+        #         self._cache_result(result, name)
+        #         return result
+        #     except asyncio.CancelledError:
+        #         continue
+        #     except Exception as e:
+        #         print(str(e))
+        #         continue
+        # return []
+
+    async def _resolve(self, endpoint, hostname, family, timeout=None, queue: asyncio.Queue=None) -> List[str]:
+        if timeout is None:
+            timeout = 30
         params = {
             "name": hostname,
             "type": "AAAA" if family == socket.AF_INET6 else "A",
@@ -145,7 +171,11 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             "cd": "false",
         }
         if self._client_session is None:
-            self._client_session = aiohttp.ClientSession()
+            self._client_session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(
+                    resolver=aiohttp.AsyncResolver(nameservers=self._boot)
+                )
+            )
 
         async with self._client_session.get(
             endpoint,
@@ -154,7 +184,10 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             timeout=aiohttp.ClientTimeout(total=timeout),
         ) as resp:
             if resp.status == 200:
-                return self._parse_result(hostname, await resp.text())
+                data = self._parse_result(hostname, await resp.text())
+                if queue is not None:
+                    await queue.put(data)
+                return data
             else:
                 raise Exception(
                     "Failed to resolve {} with {}: HTTP Status {}".format(

@@ -15,7 +15,9 @@ except ImportError:
 
     OPERATION_TIMEDOUT = CurlECode.OPERATION_TIMEDOUT
 from scrapy import signals
-from scrapy.core.downloader.handlers.http11 import HTTP11DownloadHandler as HTTPDownloadHandler
+from scrapy.core.downloader.handlers.http11 import (
+    HTTP11DownloadHandler as HTTPDownloadHandler,
+)
 from scrapy.crawler import Crawler
 from scrapy.http import Headers, Request, Response
 from scrapy.responsetypes import responsetypes
@@ -59,12 +61,14 @@ class CurlCFFIDownloadHandler(HTTPDownloadHandler):
                 request.url,
                 data=request.body,
                 headers=request.headers.to_unicode_dict(),
-                proxies={
-                    "http": proxy,
-                    "https": proxy,
-                }
-                if proxy
-                else None,
+                proxies=(
+                    {
+                        "http": proxy,
+                        "https": proxy,
+                    }
+                    if proxy
+                    else None
+                ),
                 timeout=timeout,
                 impersonate=impersonate,
             )

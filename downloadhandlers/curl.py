@@ -5,7 +5,9 @@ from typing import Optional
 from requests import Session
 from requests_curl import CURLAdapter
 from scrapy import signals
-from scrapy.core.downloader.handlers.http11 import HTTP11DownloadHandler as HTTPDownloadHandler
+from scrapy.core.downloader.handlers.http11 import (
+    HTTP11DownloadHandler as HTTPDownloadHandler,
+)
 from scrapy.crawler import Crawler
 from scrapy.http import Headers, Request, Response
 from scrapy.responsetypes import responsetypes
