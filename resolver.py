@@ -48,7 +48,6 @@ class CachingAsyncResolver(CachingThreadedResolver):
         )
 
     def getHostByName(self, name, timeout=None):
-        print(f"resolving name {name}")
         return deferred_from_coro(self._getHostByName(name, timeout))
 
     async def _getHostByName(self, name, timeout=None):
@@ -106,7 +105,6 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
         self._boot = boot or [
             "8.8.8.8"
         ]  # bootstrap DNS server for aiohttp resolver, and then connect to the real DOH servers
-        print(self._boot)
 
     @classmethod
     def from_crawler(cls, crawler, reactor):
@@ -133,7 +131,9 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
 
         queue = asyncio.Queue()
         tasks = [
-            asyncio.create_task(self._resolve(endpoint, name, socket.AF_INET, timeout, queue))
+            asyncio.create_task(
+                self._resolve(endpoint, name, socket.AF_INET, timeout, queue)
+            )
             for endpoint in self.endpoints
         ]
         ips = await queue.get()
@@ -144,7 +144,6 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
             except asyncio.CancelledError:
                 pass
         result = ips[0]
-        print("got ip", result)
         dnscache[name] = result
         return result
 
@@ -161,7 +160,9 @@ class CachingAsyncDohResolver(CachingThreadedResolver):
         #         continue
         # return []
 
-    async def _resolve(self, endpoint, hostname, family, timeout=None, queue: asyncio.Queue=None) -> List[str]:
+    async def _resolve(
+        self, endpoint, hostname, family, timeout=None, queue: asyncio.Queue = None
+    ) -> List[str]:
         if timeout is None:
             timeout = 30
         params = {
