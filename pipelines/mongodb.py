@@ -76,7 +76,7 @@ class AsyncMongoDBPipeline:
         self.user = user
         self.password = password
         self.db = db
-        self.client: motor_asyncio.AsyncIOMotorClient = None
+        self.client: AsyncMongoClient = None
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -96,14 +96,14 @@ class AsyncMongoDBPipeline:
             )
         )
 
-    def close_spider(self, spider):
-        self.client.close()
+    async def close_spider(self, spider):
+        await self.client.close()
 
     async def process_item(self, item: scrapy.Item, spider: scrapy.Spider):
         collection = self.client[self.db]["test"]  # 改成你自己的集合名字
         obj: dict = ItemAdapter(item).asdict()
         await collection.insert_one(obj)
-        logger.debug("执行mongodb的insert_one:{0}".format(obj))
+        # logger.debug("执行mongodb的insert_one:{0}".format(obj))
 
 
 if __name__ == "__main__":
